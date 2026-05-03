@@ -75,7 +75,7 @@ const STEP_3_FIELDS: NumericFieldConfig[] = [
   { name: 'LBXHGB', label: 'Гемоглобин', min: 5, max: 25 },
   { name: 'LBXRBCSI', label: 'Эритроциты (RBC)', min: 1, max: 8 },
   { name: 'LBXWBCSI', label: 'Лейкоциты (WBC)', min: 1, max: 50 },
-  { name: 'LBXLYPCT', label: 'Лимфоциты', min: 1, max: 80 },
+  { name: 'LBXLYPCT', label: 'Процент лимфоцитов', min: 1, max: 80 },
   { name: 'LBXMCVSI', label: 'Средний объём эритроцита (MCV)', min: 50, max: 130 },
   { name: 'LBXRDW', label: 'Ширина распределения эритроцитов (RDW)', min: 10, max: 30 },
   { name: 'URXUMA', label: 'Микроальбумин мочи', min: 0, max: 3000 },
