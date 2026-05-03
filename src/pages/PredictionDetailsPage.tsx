@@ -49,7 +49,7 @@ const INPUT_LABELS_MAP: Record<string, string> = {
   LBXHGB: 'Гемоглобин',
   LBXRBCSI: 'Эритроциты (RBC)',
   LBXWBCSI: 'Лейкоциты (WBC)',
-  LBXLYPCT: 'Лимфоциты',
+  LBXLYPCT: 'Процент лимфоцитов',
   LBXMCVSI: 'Средний объем эритроцита (MCV)',
   LBXRDW: 'Ширина распределения эритроцитов (RDW)',
   URXUMA: 'Микроальбумин мочи',
