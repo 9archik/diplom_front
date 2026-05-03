@@ -48,7 +48,7 @@ interface NumericFieldConfig {
 }
 
 const STEP_1_NUMERIC_FIELDS: NumericFieldConfig[] = [
-  { name: 'RIDAGEYR', label: 'Возраст', min: 18, max: 80, integer: true },
+  { name: 'RIDAGEYR', label: 'Возраст с', min: 18, max: 80, integer: true },
   { name: 'BMXHT', label: 'Рост', min: 140, max: 220 },
   { name: 'weight_kg', label: 'Вес' },
   { name: 'BMXWAIST', label: 'Окружность талии', min: 50, max: 180 },
