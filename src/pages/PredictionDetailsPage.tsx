@@ -19,9 +19,14 @@ import { Link, useParams } from 'react-router-dom'
 
 import { usePredictionDetailsQuery } from '../features/screening/hooks/usePredictionDetailsQuery'
 import { getPredictionClassLabelRu } from '../features/screening/lib/predictionClassLabels'
+import { getFieldUnitLabel } from '../features/screening/lib/unitConverter'
 import { PredictionFeedbackCard } from '../features/screening/ui/PredictionFeedbackCard'
 import { useUpdatePredictionMode } from '../features/screening/hooks/useUpdatePredictionMode'
-import { PREDICTION_MODE_OPTIONS, type PredictionModel } from '../features/screening/model/types'
+import {
+  PREDICTION_MODE_OPTIONS,
+  type PredictionModel,
+  type ScreeningFormValues,
+} from '../features/screening/model/types'
 
 const modeLabelMap = new Map(PREDICTION_MODE_OPTIONS.map((item) => [item.value, item.label]))
 const INPUT_LABELS_MAP: Record<string, string> = {
@@ -62,6 +67,72 @@ const INPUT_LABELS_MAP: Record<string, string> = {
   BMXBMI: 'Индекс массы тела (BMI)',
   eGFR: 'Скорость клубочковой фильтрации (eGFR)',
 }
+type InputPrimitiveValue = number | string | boolean | null
+type InputValueLabelsMap = Record<string, Record<string, string>>
+type InputFieldKey = keyof ScreeningFormValues
+
+const BINARY_NO_YES_LABELS: Record<string, string> = {
+  0: 'Нет',
+  1: 'Да',
+}
+
+const INPUT_VALUE_LABELS_MAP: InputValueLabelsMap = {
+  RIAGENDR: {
+    0: 'Мужской',
+    1: 'Женский',
+  },
+  HSD010: {
+    1: 'Отличное',
+    2: 'Очень хорошее',
+    3: 'Хорошее',
+    4: 'Удовлетворительное',
+    5: 'Плохое',
+  },
+  MCQ300C: {
+    '-1': 'Неизвестно',
+    0: 'Нет',
+    1: 'Да (родители или братья/сёстры)',
+  },
+  DMDEDUC2: {
+    1: 'Менее 9 классов',
+    2: '9-11 классов (без аттестата)',
+    3: 'Среднее общее (аттестат)',
+    4: 'Среднее специальное / неполное высшее',
+    5: 'Высшее и выше',
+  },
+  hypertension: BINARY_NO_YES_LABELS,
+  MCQ160A: BINARY_NO_YES_LABELS,
+  MCQ160E: BINARY_NO_YES_LABELS,
+  MCQ160F: BINARY_NO_YES_LABELS,
+}
+
+const INPUT_FIELD_KEYS_WITH_UNITS: ReadonlySet<InputFieldKey> = new Set([
+  'RIDAGEYR',
+  'BMXHT',
+  'weight_kg',
+  'BMXWAIST',
+  'LBXGLU',
+  'LBXTC',
+  'LBDHDD',
+  'LBXTR',
+  'LBXSAT',
+  'LBXSASS',
+  'LBXSUA',
+  'LBXSCR',
+  'LBXSBU',
+  'LBXSAL',
+  'LBXSAPSI',
+  'LBXSTB',
+  'LBXCRP',
+  'LBXVIDMS',
+  'LBXHGB',
+  'LBXRBCSI',
+  'LBXWBCSI',
+  'LBXLYPCT',
+  'LBXMCVSI',
+  'LBXRDW',
+  'URXUMA',
+])
 
 function formatDate(value: string) {
   const date = new Date(value)
@@ -97,7 +168,7 @@ const META_KEYS = new Set([
   'computed_data',
 ])
 
-function isPrimitiveValue(value: unknown): value is number | string | boolean | null {
+function isPrimitiveValue(value: unknown): value is InputPrimitiveValue {
   return (
     typeof value === 'number' ||
     typeof value === 'string' ||
@@ -108,11 +179,11 @@ function isPrimitiveValue(value: unknown): value is number | string | boolean | 
 
 function isPrimitiveEntry(
   entry: [string, unknown],
-): entry is [string, number | string | boolean | null] {
+): entry is [string, InputPrimitiveValue] {
   return isPrimitiveValue(entry[1])
 }
 
-function getInputEntries(prediction: Record<string, unknown>): Array<[string, number | string | boolean | null]> {
+function getInputEntries(prediction: Record<string, unknown>): Array<[string, InputPrimitiveValue]> {
   const nestedPayload =
     prediction.user_input_data ??
     prediction.input_data ??
@@ -129,13 +200,45 @@ function getInputEntries(prediction: Record<string, unknown>): Array<[string, nu
     .sort(([a], [b]) => a.localeCompare(b))
 }
 
-function formatInputValue(value: number | string | boolean | null): string {
+function getFormattedCategoricalInputValue(key: string, value: InputPrimitiveValue): string | null {
+  const valueLabelsMap = INPUT_VALUE_LABELS_MAP[key]
+  if (!valueLabelsMap) {
+    return null
+  }
+
+  const formattedValue = valueLabelsMap[String(value)]
+  return formattedValue ?? null
+}
+
+function getInputUnitLabel(key: string): string | null {
+  if (!INPUT_FIELD_KEYS_WITH_UNITS.has(key as InputFieldKey)) {
+    return null
+  }
+
+  return getFieldUnitLabel(key as InputFieldKey, 'SI') ?? null
+}
+
+function formatInputValue(key: string, value: InputPrimitiveValue): string {
+  const formattedCategoricalValue = getFormattedCategoricalInputValue(key, value)
+  if (formattedCategoricalValue) {
+    return formattedCategoricalValue
+  }
+
   if (value === null) {
     return 'null'
   }
 
   if (typeof value === 'boolean') {
     return value ? 'true' : 'false'
+  }
+
+  if (typeof value === 'number') {
+    const unitLabel = getInputUnitLabel(key)
+    if (!unitLabel) {
+      return String(value)
+    }
+
+    return `${value} ${unitLabel}`
   }
 
   return String(value)
@@ -321,7 +424,7 @@ export function PredictionDetailsPage() {
                         {getInputLabel(key)}
                       </Text>
                       <Text size="sm" fw={500}>
-                        {formatInputValue(value)}
+                        {formatInputValue(key, value)}
                       </Text>
                     </Group>
                   ))}
