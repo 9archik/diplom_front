@@ -23,7 +23,9 @@ import { getFieldUnitLabel } from '../features/screening/lib/unitConverter'
 import { PredictionFeedbackCard } from '../features/screening/ui/PredictionFeedbackCard'
 import { useUpdatePredictionMode } from '../features/screening/hooks/useUpdatePredictionMode'
 import {
+  CONVERTIBLE_NUMERIC_FIELDS,
   PREDICTION_MODE_OPTIONS,
+  type UnitSystem,
   type PredictionModel,
   type ScreeningFormValues,
 } from '../features/screening/model/types'
@@ -215,7 +217,13 @@ function getInputUnitLabel(key: string): string | null {
     return null
   }
 
-  return getFieldUnitLabel(key as InputFieldKey, 'SI') ?? null
+  const unitSystem: UnitSystem = CONVERTIBLE_NUMERIC_FIELDS.includes(
+    key as (typeof CONVERTIBLE_NUMERIC_FIELDS)[number],
+  )
+    ? 'US'
+    : 'SI'
+
+  return getFieldUnitLabel(key as InputFieldKey, unitSystem) ?? null
 }
 
 function formatInputValue(key: string, value: InputPrimitiveValue): string {
