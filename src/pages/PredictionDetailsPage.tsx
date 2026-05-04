@@ -19,9 +19,14 @@ import { Link, useParams } from 'react-router-dom'
 
 import { usePredictionDetailsQuery } from '../features/screening/hooks/usePredictionDetailsQuery'
 import { getPredictionClassLabelRu } from '../features/screening/lib/predictionClassLabels'
+import { getFieldUnitLabel } from '../features/screening/lib/unitConverter'
 import { PredictionFeedbackCard } from '../features/screening/ui/PredictionFeedbackCard'
 import { useUpdatePredictionMode } from '../features/screening/hooks/useUpdatePredictionMode'
-import { PREDICTION_MODE_OPTIONS, type PredictionModel } from '../features/screening/model/types'
+import {
+  PREDICTION_MODE_OPTIONS,
+  type PredictionModel,
+  type ScreeningFormValues,
+} from '../features/screening/model/types'
 
 const modeLabelMap = new Map(PREDICTION_MODE_OPTIONS.map((item) => [item.value, item.label]))
 const INPUT_LABELS_MAP: Record<string, string> = {
@@ -64,6 +69,7 @@ const INPUT_LABELS_MAP: Record<string, string> = {
 }
 type InputPrimitiveValue = number | string | boolean | null
 type InputValueLabelsMap = Record<string, Record<string, string>>
+type InputFieldKey = keyof ScreeningFormValues
 
 const BINARY_NO_YES_LABELS: Record<string, string> = {
   0: 'Нет',
@@ -99,6 +105,34 @@ const INPUT_VALUE_LABELS_MAP: InputValueLabelsMap = {
   MCQ160E: BINARY_NO_YES_LABELS,
   MCQ160F: BINARY_NO_YES_LABELS,
 }
+
+const INPUT_FIELD_KEYS_WITH_UNITS: ReadonlySet<InputFieldKey> = new Set([
+  'RIDAGEYR',
+  'BMXHT',
+  'weight_kg',
+  'BMXWAIST',
+  'LBXGLU',
+  'LBXTC',
+  'LBDHDD',
+  'LBXTR',
+  'LBXSAT',
+  'LBXSASS',
+  'LBXSUA',
+  'LBXSCR',
+  'LBXSBU',
+  'LBXSAL',
+  'LBXSAPSI',
+  'LBXSTB',
+  'LBXCRP',
+  'LBXVIDMS',
+  'LBXHGB',
+  'LBXRBCSI',
+  'LBXWBCSI',
+  'LBXLYPCT',
+  'LBXMCVSI',
+  'LBXRDW',
+  'URXUMA',
+])
 
 function formatDate(value: string) {
   const date = new Date(value)
@@ -176,6 +210,14 @@ function getFormattedCategoricalInputValue(key: string, value: InputPrimitiveVal
   return formattedValue ?? null
 }
 
+function getInputUnitLabel(key: string): string | null {
+  if (!INPUT_FIELD_KEYS_WITH_UNITS.has(key as InputFieldKey)) {
+    return null
+  }
+
+  return getFieldUnitLabel(key as InputFieldKey, 'SI') ?? null
+}
+
 function formatInputValue(key: string, value: InputPrimitiveValue): string {
   const formattedCategoricalValue = getFormattedCategoricalInputValue(key, value)
   if (formattedCategoricalValue) {
@@ -188,6 +230,15 @@ function formatInputValue(key: string, value: InputPrimitiveValue): string {
 
   if (typeof value === 'boolean') {
     return value ? 'true' : 'false'
+  }
+
+  if (typeof value === 'number') {
+    const unitLabel = getInputUnitLabel(key)
+    if (!unitLabel) {
+      return String(value)
+    }
+
+    return `${value} ${unitLabel}`
   }
 
   return String(value)
